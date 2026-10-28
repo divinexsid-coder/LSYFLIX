@@ -1,0 +1,44 @@
+
+name: Extract ZIP to Main Root
+
+"on":
+  workflow_dispatch:
+  push:
+    paths:
+      - "apks.zip"
+      - ".github/workflows/extract-zip.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Extract ZIP
+        run: |
+          set -e
+          sudo apt-get update
+          sudo apt-get install -y unzip
+          test -f apks.zip
+          mkdir -p /tmp/zipfiles
+          unzip -o apks.zip -d /tmp/zipfiles
+          cp -an /tmp/zipfiles/. .
+          rm -rf /tmp/zipfiles
+          rm -f apks.zip
+
+      - name: Commit extracted files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Extract ZIP into main root"
+            git push origin HEAD:main
+          fi
+          
